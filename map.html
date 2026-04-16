@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manchester Marathon 2026 - South Loop Spectator Route</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        #map {
+            flex: 1;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 320px;
+            background: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        }
+        .sidebar h1 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .sidebar h2 {
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #666;
+            text-transform: uppercase;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        .route-section {
+            margin-bottom: 15px;
+        }
+        .pub {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #ff6b6b;
+            background: #fff9f9;
+        }
+        .pub.active {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+        .pub h3 {
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: #333;
+        }
+        .pub-time {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .pub-addr {
+            font-size: 11px;
+            color: #999;
+        }
+        .legend {
+            margin-top: 20px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+        .legend-color.route-friend {
+            background: #cc0000;
+            height: 6px;
+            width: 25px;
+        }
+        .legend-color.route-you {
+            background: #0066ff;
+            height: 2px;
+            width: 25px;
+            background-image: repeating-linear-gradient(90deg, #0066ff 0, #0066ff 4px, transparent 4px, transparent 8px);
+        }
+        .stats {
+            margin-top: 15px;
+            padding: 12px;
+            background: #ecf0f1;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        /* Leaflet popup styling for mobile */
+        .leaflet-popup-content-wrapper {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        .leaflet-popup-content {
+            margin: 8px 12px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* Improve touch targets */
+        .leaflet-control-attribution {
+            font-size: 10px;
+            padding: 4px 6px;
+        }
+
+        .leaflet-control-zoom {
+            border-radius: 6px;
+        }
+
+        .leaflet-control-zoom a {
+            font-size: 16px;
+            padding: 6px 8px;
+            line-height: 1.2;
+        }
+
+        /* Tooltip styling */
+        .leaflet-tooltip {
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 11px;
+            padding: 4px 6px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+                border-top: 1px solid #ddd;
+                border-left: none;
+                padding: 15px;
+            }
+            .container {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                max-height: 45vh;
+                padding: 12px;
+            }
+            .sidebar h1 {
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+            .sidebar h2 {
+                font-size: 13px;
+                margin-top: 15px;
+                margin-bottom: 8px;
+            }
+            .pub {
+                padding: 10px;
+                margin-bottom: 8px;
+            }
+            .pub h3 {
+                font-size: 12px;
+            }
+            .pub-time, .pub-addr {
+                font-size: 10px;
+            }
+            .legend {
+                margin-top: 15px;
+                padding: 10px;
+            }
+            .legend-item {
+                font-size: 11px;
+                margin-bottom: 6px;
+            }
+            .stats {
+                margin-top: 12px;
+                padding: 10px;
+                font-size: 11px;
+            }
+            .stats-item {
+                margin-bottom: 5px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                font-size: 14px;
+            }
+            .sidebar {
+                max-height: 50vh;
+                padding: 10px;
+            }
+            .sidebar h1 {
+                font-size: 15px;
+                margin-bottom: 6px;
+            }
+            .sidebar h2 {
+                font-size: 12px;
+                margin-top: 12px;
+                margin-bottom: 6px;
+            }
+            .pub {
+                padding: 8px;
+                margin-bottom: 6px;
+            }
+            .pub h3 {
+                font-size: 11px;
+                margin-bottom: 2px;
+            }
+            .pub-time, .pub-addr {
+                font-size: 9px;
+            }
+            .legend {
+                margin-top: 10px;
+                padding: 8px;
+            }
+            .legend-item {
+                font-size: 10px;
+                margin-bottom: 4px;
+            }
+            .stats {
+                margin-top: 10px;
+                padding: 8px;
+                font-size: 10px;
+            }
+            .stats-item {
+                margin-bottom: 4px;
+            }
+        }
+
+        .password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #FFD700 0%, #32CD32 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .password-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+        }
+
+        .password-box h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .password-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        .password-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .password-box button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .password-box button:hover {
+            background: #5568d3;
+        }
+
+        .password-error {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .container.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="password-overlay" id="passwordOverlay">
+        <div class="password-box">
+            <h2>🍺 Manchester Marathon</h2>
+            <input type="password" id="passwordInput" placeholder="Enter password" />
+            <button onclick="checkPassword()">Access Map</button>
+            <div class="password-error" id="passwordError">Wrong password. Try again.</div>
+        </div>
+    </div>
+
+    <div class="container hidden" id="mainContainer">
+        <div id="map"></div>
+        <div class="sidebar">
+            <h1>🍺 Manchester Marathon 2026</h1>
+            <div style="font-size: 11px; color: #666; margin-bottom: 15px;">Sunday 19 April | Spectator Pub Crawl</div>
+
+            <h2>Your 4 Pubs (Planned)</h2>
+            <div class="route-section">
+                <div class="pub active">
+                    <h3>🍺 Gorse Hill</h3>
+                    <div class="pub-time">12:11-12:41 PM</div>
+                    <div class="pub-addr">Stretford (km 10)</div>
+                    <div style="font-size: 11px; color: #27ae60; margin-top: 3px;">✓ See her at 12:11</div>
+                </div>
+                <div class="pub">
+                    <h3>🍺 Kings Ransom</h3>
+                    <div class="pub-time">12:30-1:00 PM</div>
+                    <div class="pub-addr">Sale (km 13)</div>
+                    <div style="font-size: 11px; color: #27ae60; margin-top: 3px;">✓ See her at 12:30</div>
+                </div>
+                <div class="pub">
+                    <h3>🍺 The Beagle</h3>
+                    <div class="pub-time">2:17-2:47 PM</div>
+                    <div class="pub-addr">Chorlton (km 32)</div>
+                    <div style="font-size: 11px; color: #27ae60; margin-top: 3px;">✓ See her at 2:17</div>
+                </div>
+                <div class="pub">
+                    <h3>🍺 Smithfield Social</h3>
+                    <div class="pub-time">2:48-3:18 PM</div>
+                    <div class="pub-addr">Thomas St, City Centre (km 37)</div>
+                    <div style="font-size: 11px; color: #27ae60; margin-top: 3px;">✓ See her at 2:48</div>
+                </div>
+            </div>
+
+            <h2>Optional Stops (6)</h2>
+            <div class="route-section" style="font-size: 11px; color: #666;">
+                <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                    <div style="margin-bottom: 6px;"><strong>South Loop Detours:</strong></div>
+                    <div style="margin-bottom: 6px;">🔵 The Quadrant (Great Stone Rd, Stretford) • 11:55-12:25 AM</div>
+                    <div style="margin-bottom: 8px;">🔵 The Bishop Blaize (Chester Rd, Stretford) • 12:00-12:30 PM</div>
+                </div>
+
+                <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                    <div style="margin-bottom: 6px;"><strong>South Area:</strong></div>
+                    <div style="margin-bottom: 8px;">🔵 The Old Hall (Altrincham Town Centre) • 12:45-1:15 PM</div>
+                </div>
+
+                <div style="margin-bottom: 10px; padding-bottom: 10px;">
+                    <div style="margin-bottom: 6px;"><strong>Return Leg:</strong></div>
+                    <div style="margin-bottom: 6px;">🔵 Cornbrook Inn (Hulme) • 1:50-2:20 PM</div>
+                    <div style="margin-bottom: 6px;">🔵 The Font (Chorlton) • 2:25-2:55 PM</div>
+                    <div style="margin-bottom: 6px;">🔵 Cornerhouse (Oxford St, City Centre) • 2:55-3:25 PM</div>
+                </div>
+
+                <div style="font-size: 10px; color: #999; margin-top: 8px; padding: 8px; background: #f9f9f9; border-left: 2px solid #0066ff; border-radius: 3px;">
+                    <em>Mix & match these with your 4 planned pubs for a longer crawl. Visiting all 10 pubs would extend your route to ~15km.</em>
+                </div>
+            </div>
+
+            <h2>When She Arrives</h2>
+            <div class="route-section" style="font-size: 11px; color: #333;">
+                <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+                    <div style="margin-bottom: 4px;"><strong>Planned Points (Red):</strong></div>
+                    <div style="margin-bottom: 3px;">🔴 km 10: 12:10 PM</div>
+                    <div style="margin-bottom: 3px;">🔴 km 13: 12:28 PM</div>
+                    <div style="margin-bottom: 3px;">🔴 km 32: 2:22 PM</div>
+                    <div style="margin-bottom: 3px;">🔴 km 37: 2:52 PM</div>
+                </div>
+                <div style="padding-top: 8px;">
+                    <div style="margin-bottom: 4px;"><strong>Optional Points (Blue):</strong></div>
+                    <div style="margin-bottom: 3px;">🔵 km 4: 11:34 AM</div>
+                    <div style="margin-bottom: 3px;">🔵 km 8: 11:58 AM</div>
+                    <div style="margin-bottom: 3px;">🔵 km 15: 12:40 PM</div>
+                    <div style="margin-bottom: 3px;">🔵 km 22: 1:52 PM</div>
+                    <div style="margin-bottom: 3px;">🔵 km 27: 2:22 PM</div>
+                    <div style="margin-bottom: 3px;">🔵 km 30: 2:40 PM</div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <h3 style="font-size: 12px; margin-bottom: 10px; font-weight: bold;">Legend</h3>
+                <div class="legend-item">
+                    <div class="legend-color route-friend" style="background: #cc0000; height: 5px;"></div>
+                    <span><strong>Her 42.2km</strong> (solid red)</span>
+                </div>
+                <div class="legend-item" style="margin-top: 6px;">
+                    <div class="legend-color route-you" style="border-top: 2px dashed #0066ff; height: 0;"></div>
+                    <span><strong>Your 10km</strong> (dashed blue)</span>
+                </div>
+                <div class="legend-item" style="margin-top: 10px; font-weight: bold; color: #cc0000;">
+                    🔴 Planned Pubs (4)
+                </div>
+                <div class="legend-item">
+                    <span style="margin-left: 28px; font-size: 11px;">Gorse Hill, Kings Ransom, Beagle, Smithfield</span>
+                </div>
+                <div class="legend-item" style="margin-top: 6px; font-weight: bold; color: #0066ff;">
+                    🔵 Optional Pubs (6)
+                </div>
+                <div class="legend-item">
+                    <span style="margin-left: 28px; font-size: 11px;">Quadrant, Bishop Blaize, Old Hall, Cornbrook, Font, Cornerhouse</span>
+                </div>
+                <div class="legend-item" style="margin-top: 10px;">
+                    <span style="margin-left: 28px;">⏱️ = X markers (km points)</span>
+                </div>
+                <div class="legend-item">
+                    <span style="margin-left: 28px;">🟢 = Start | 🟣 = Finish</span>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div style="font-weight: bold; margin-bottom: 8px;">Quick Facts</div>
+                <div class="stats-item">
+                    <span>Start:</span>
+                    <span><strong>11:10 AM</strong></span>
+                </div>
+                <div class="stats-item">
+                    <span>She finishes:</span>
+                    <span><strong>3:30 PM</strong></span>
+                </div>
+                <div class="stats-item">
+                    <span>Pubs available:</span>
+                    <span><strong>4 + 6 optional</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+        // Password protection
+        const CORRECT_PASSWORD = 'errolR';
+        let map = null;
+
+        function initializeMap() {
+            // Initialize map centered on Manchester with mobile-friendly options
+            map = L.map('map', {
+            zoomControl: true,
+            dragging: true,
+            touchZoom: true,
+            doubleClickZoom: true,
+            scrollWheelZoom: true,
+            tap: true
+        }).setView([53.41, -2.31], 12);
+
+        // Add CartoDB tiles (no referrer restriction)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap © CartoDB',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Pub locations (approximate)
+        const pubs = [
+            {
+                name: "The Bishop Blaize",
+                location: "Chester Road, Stretford",
+                lat: 53.4160,
+                lng: -2.2850,
+                time: "11:15-11:45",
+                seeHer: "11:38 AM"
+            },
+            {
+                name: "The Slug & Lettuce",
+                location: "Waterside Plaza, Sale",
+                lat: 53.4150,
+                lng: -2.3220,
+                time: "12:25-12:55",
+                seeHer: "12:30 PM"
+            },
+            {
+                name: "The Tavern on the Green",
+                location: "Altrincham Town Centre",
+                lat: 53.3865,
+                lng: -2.3450,
+                time: "1:35-2:05",
+                seeHer: "1:31 PM"
+            }
+        ];
+
+        // Planned pub stops (4 pubs at km 10, 13, 32, 37)
+        const plannedPubs = [
+            {
+                name: "Gorse Hill",
+                location: "Stretford (km 10)",
+                lat: 53.44447,
+                lng: -2.30622,
+                time: "12:11-12:41 PM",
+                km: 10
+            },
+            {
+                name: "Kings Ransom",
+                location: "Sale (km 13)",
+                lat: 53.42803,
+                lng: -2.31612,
+                time: "12:30-1:00 PM",
+                km: 13
+            },
+            {
+                name: "The Beagle",
+                location: "Chorlton (km 32)",
+                lat: 53.44663,
+                lng: -2.26656,
+                time: "2:17-2:47 PM",
+                km: 32
+            },
+            {
+                name: "Smithfield Social",
+                location: "Thomas St, City Centre (km 37)",
+                lat: 53.46613,
+                lng: -2.23346,
+                time: "2:48-3:18 PM",
+                km: 37
+            }
+        ];
+
+        // Add PLANNED pub markers - large red circles
+        plannedPubs.forEach((pub, index) => {
+            const popupText = `
+                <div style="font-size: 12px;">
+                    <strong style="color: #cc0000;">PUB #${index + 1} (PLANNED)</strong><br>
+                    <small>${pub.location}</small><br>
+                    <span style="color: #cc0000;"><strong>km:</strong> ${pub.km}</span><br>
+                    <span style="color: #27ae60;"><strong>She arrives:</strong> ${pub.time.split('-')[0]}</span>
+                </div>
+            `;
+            L.circleMarker([pub.lat, pub.lng], {
+                radius: 14,
+                fillColor: '#cc0000',
+                color: '#990000',
+                weight: 3,
+                opacity: 1,
+                fillOpacity: 0.85
+            })
+            .bindPopup(popupText)
+            .addTo(map)
+            .bindTooltip(`PLAN: Pub #${index + 1}`, {
+                permanent: true,
+                direction: 'right',
+                className: 'planned-label'
+            });
+        });
+
+        // Optional pubs along the route (smaller markers)
+        const optionalPubs = [
+            { name: "The Quadrant", location: "Great Stone Rd, Stretford", lat: 53.46191, lng: -2.28603, note: "South loop", time: "11:55-12:25 AM" },
+            { name: "The Bishop Blaize", location: "Chester Rd, Stretford", lat: 53.45729, lng: -2.29699, note: "South loop", time: "12:00-12:30 PM" },
+            { name: "The Old Hall", location: "Altrincham Town Centre", lat: 53.43850, lng: -2.29958, note: "South area", time: "12:45-1:15 PM" },
+            { name: "Cornbrook Inn", location: "Hulme, Manchester", lat: 53.44345, lng: -2.27622, note: "Hulme area", time: "1:50-2:20 PM" },
+            { name: "The Font", location: "Chorlton, Manchester", lat: 53.44725, lng: -2.25571, note: "Return leg", time: "2:25-2:55 PM" },
+            { name: "Cornerhouse", location: "Oxford St, City Centre", lat: 53.45250, lng: -2.24782, note: "Return leg", time: "2:55-3:25 PM" }
+        ];
+
+        // Add OPTIONAL pubs - smaller blue circles
+        optionalPubs.forEach((pub, index) => {
+            const popupText = `
+                <div style="font-size: 12px;">
+                    <strong style="color: #0066ff;">OPTIONAL #${index + 1}</strong><br>
+                    <small>${pub.location}</small><br>
+                    <span style="color: #666;"><strong>Time:</strong> ${pub.time}</span><br>
+                    <span style="color: #999;"><small>${pub.note}</small></span>
+                </div>
+            `;
+            L.circleMarker([pub.lat, pub.lng], {
+                radius: 7,
+                fillColor: '#0066ff',
+                color: '#0044cc',
+                weight: 1.5,
+                opacity: 0.7,
+                fillOpacity: 0.6
+            })
+            .bindPopup(popupText)
+            .addTo(map);
+        });
+
+        // Your pub crawl route (from manchester_marapub.gpx)
+        const pubRoute = [
+[53.46213202110045, -2.277686297729775],
+[53.463128495345515, -2.2797476552890354],
+[53.46282245685144, -2.282760852771579],
+[53.46191497444199, -2.2860314025529433],
+[53.46104641089599, -2.289312462708641],
+[53.46113353814064, -2.2922020102326908],
+[53.460609038562644, -2.295396111544956],
+[53.45900047044896, -2.2950866498201785],
+[53.45729810287924, -2.296990073658259],
+[53.455620154223865, -2.296827490999676],
+[53.45474913357996, -2.2992956082111564],
+[53.45325949910359, -2.300973036111842],
+[53.4521855213829, -2.300216939366682],
+[53.450385914636094, -2.3008660044928373],
+[53.44842305827235, -2.3026637138367034],
+[53.446479847962834, -2.3045523129948724],
+[53.44447006945146, -2.306223898292372],
+[53.44229320762873, -2.3071362568468157],
+[53.440088995122956, -2.307868880799243],
+[53.43789033274419, -2.3086532554907304],
+[53.43571079239284, -2.3095246971391026],
+[53.4335114206472, -2.3102330571949383],
+[53.431376429508, -2.311263235829473],
+[53.429900487060436, -2.3140615077461266],
+[53.42803160519058, -2.3161240366624156],
+[53.42608115625041, -2.3180008424166703],
+[53.42489814925665, -2.3198282545350817],
+[53.426409112403604, -2.317689983503693],
+[53.428357847020315, -2.315808124389302],
+[53.43015131149132, -2.3135899041889654],
+[53.43170029644397, -2.3109408142284464],
+[53.43388026277625, -2.3101053503643536],
+[53.436073917374955, -2.3093732526051127],
+[53.438260191188704, -2.3085339428438614],
+[53.440453864883224, -2.307712035801672],
+[53.440357371973676, -2.3056942795075743],
+[53.43925869033521, -2.302762764850604],
+[53.43850580167792, -2.2995805425353195],
+[53.43885661695099, -2.2960256120215905],
+[53.43893186843202, -2.2922924053490883],
+[53.43959839448189, -2.288903480539151],
+[53.440032230812754, -2.286306389425797],
+[53.44102239208498, -2.284031374640721],
+[53.442180381256286, -2.281577539474874],
+[53.44261465256799, -2.278455629262511],
+[53.44345136334908, -2.2762222861499497],
+[53.44534884632927, -2.276509511222224],
+[53.44568759439759, -2.272779237307015],
+[53.445830078423995, -2.269015464564363],
+[53.44663938583457, -2.2665645033135706],
+[53.44693313808517, -2.2631956703440075],
+[53.44698666243266, -2.259421682244284],
+[53.44725367129241, -2.2557106776202223],
+[53.44874201701573, -2.2542839236463275],
+[53.44911642760633, -2.2509450768488257],
+[53.45043056757881, -2.248956155101273],
+[53.45250205053379, -2.247816674667123],
+[53.45352137281425, -2.2452944544157196],
+[53.455484879631214, -2.2448997170074505],
+[53.45726234563195, -2.2440993053689757],
+[53.45867475008932, -2.242028201277483],
+[53.46077720364607, -2.241400037996691],
+[53.462707390232794, -2.2396233992050205],
+[53.46414456072176, -2.237193856464335],
+[53.46543092163525, -2.236163489026601],
+[53.46613225282001, -2.233456553927724]
+        ];
+
+        // Draw your pub route - blue dashed
+        L.polyline(pubRoute, {
+            color: '#0066ff',
+            weight: 2.5,
+            opacity: 0.8,
+            dashArray: '6, 4',
+            lineCap: 'round',
+            className: 'your-route'
+        }).addTo(map).bindPopup('<strong>Your Pub Crawl Route</strong><br>~10km via shortcuts');
+
+        // Official GPX route with all 934 track points
+        const marathonRoute = [
+[53.463686, -2.281654],
+[53.463722, -2.281468],
+[53.463943, -2.280534],
+[53.464261, -2.279188],
+[53.46444, -2.278359],
+[53.464667, -2.277453],
+[53.46499, -2.276224],
+[53.465291, -2.275176],
+[53.46545, -2.274669],
+[53.465809, -2.273612],
+[53.466186, -2.27264],
+[53.466592, -2.271761],
+[53.466825, -2.271322],
+[53.467043, -2.27096],
+[53.467221, -2.270696],
+[53.468215, -2.269319],
+[53.468615, -2.268669],
+[53.468931, -2.267986],
+[53.469098, -2.267542],
+[53.469153, -2.267365],
+[53.469236, -2.267098],
+[53.469454, -2.266395],
+[53.469573, -2.265992],
+[53.469597, -2.265903],
+[53.46971, -2.265512],
+[53.469731, -2.265325],
+[53.469859, -2.264894],
+[53.470063, -2.264221],
+[53.470266, -2.263546],
+[53.470455, -2.262915],
+[53.470662, -2.262245],
+[53.47087, -2.261575],
+[53.471078, -2.260905],
+[53.471198, -2.260516],
+[53.47136, -2.259895],
+[53.471567, -2.259225],
+[53.471697, -2.258803],
+[53.471692, -2.258553],
+[53.47165, -2.258283],
+[53.471505, -2.257999],
+[53.471397, -2.257827],
+[53.471184, -2.257881],
+[53.470787, -2.258051],
+[53.470398, -2.258178],
+[53.470066, -2.258195],
+[53.469724, -2.258201],
+[53.469388, -2.258119],
+[53.469074, -2.258045],
+[53.46863, -2.257926],
+[53.468603, -2.257919],
+[53.468397, -2.257792],
+[53.4678, -2.257698],
+[53.467527, -2.257682],
+[53.467341, -2.257687],
+[53.466845, -2.25773],
+[53.466521, -2.257774],
+[53.46591, -2.257856],
+[53.465707, -2.257872],
+[53.465684, -2.257985],
+[53.465608, -2.258369],
+[53.465271, -2.260122],
+[53.465091, -2.261071],
+[53.464929, -2.261821],
+[53.46488, -2.262077],
+[53.464816, -2.262444],
+[53.46473, -2.263021],
+[53.464648, -2.263337],
+[53.464588, -2.263623],
+[53.464217, -2.265514],
+[53.463914, -2.267195],
+[53.46372, -2.26823],
+[53.463648, -2.268568],
+[53.463486, -2.269353],
+[53.463154, -2.271126],
+[53.462984, -2.271976],
+[53.462824, -2.272824],
+[53.462788, -2.273119],
+[53.462912, -2.273375],
+[53.463208, -2.272806],
+[53.46333, -2.272571],
+[53.463604, -2.271973],
+[53.463872, -2.27139],
+[53.464142, -2.270786],
+[53.464412, -2.270182],
+[53.464682, -2.269578],
+[53.464953, -2.268975],
+[53.465223, -2.268371],
+[53.465493, -2.267767],
+[53.465763, -2.267163],
+[53.465783, -2.267117],
+[53.465971, -2.26694],
+[53.466199, -2.266786],
+[53.466508, -2.266672],
+[53.466766, -2.266626],
+[53.467212, -2.266536],
+[53.467442, -2.266489],
+[53.467887, -2.266376],
+[53.468331, -2.266263],
+[53.468445, -2.266234],
+[53.468829, -2.266125],
+[53.469028, -2.266165],
+[53.469096, -2.266192],
+[53.469175, -2.266413],
+[53.469199, -2.26656],
+[53.469164, -2.266875],
+[53.468731, -2.268069],
+[53.468503, -2.268568],
+[53.468304, -2.268938],
+[53.468118, -2.269243],
+[53.467927, -2.269528],
+[53.467093, -2.270687],
+[53.466632, -2.27144],
+[53.466535, -2.271639],
+[53.466324, -2.272072],
+[53.46615, -2.272473],
+[53.465986, -2.272884],
+[53.465734, -2.273557],
+[53.465391, -2.274543],
+[53.465093, -2.275515],
+[53.464929, -2.276087],
+[53.46457, -2.277441],
+[53.464227, -2.278834],
+[53.464116, -2.279334],
+[53.463929, -2.280076],
+[53.463843, -2.280243],
+[53.463804, -2.280297],
+[53.463746, -2.280328],
+[53.463647, -2.280325],
+[53.463417, -2.280051],
+[53.463312, -2.279778],
+[53.463233, -2.279501],
+[53.463162, -2.279151],
+[53.463103, -2.278849],
+[53.463096, -2.27863],
+[53.463074, -2.27847],
+[53.463047, -2.2781],
+[53.462974, -2.277506],
+[53.462715, -2.276343],
+[53.46263, -2.275962],
+[53.462585, -2.27586],
+[53.46245, -2.27582],
+[53.462348, -2.275826],
+[53.462232, -2.276038],
+[53.462144, -2.276495],
+[53.462062, -2.277238],
+[53.46198, -2.27798],
+[53.461898, -2.278723],
+[53.461872, -2.278954],
+[53.461745, -2.279491],
+[53.461631, -2.279813],
+[53.461383, -2.280278],
+[53.461163, -2.280754],
+[53.46094, -2.281201],
+[53.46065, -2.281778],
+[53.46036, -2.282355],
+[53.46027, -2.282534],
+[53.459986, -2.28312],
+[53.459729, -2.283654],
+[53.459453, -2.28425],
+[53.459337, -2.2845],
+[53.459054, -2.285086],
+[53.458771, -2.285673],
+[53.458487, -2.286259],
+[53.458429, -2.28638],
+[53.458853, -2.286629],
+[53.459278, -2.286877],
+[53.459703, -2.287126],
+[53.460127, -2.287374],
+[53.460552, -2.287623],
+[53.460976, -2.287871],
+[53.461132, -2.287963],
+[53.461194, -2.288012],
+[53.46101, -2.288533],
+[53.460867, -2.288872],
+[53.460443, -2.289754],
+[53.460367, -2.289908],
+[53.46034, -2.290039],
+[53.459725, -2.29125],
+[53.459488, -2.291695],
+[53.459418, -2.291703],
+[53.459093, -2.292285],
+[53.459022, -2.292433],
+[53.459007, -2.292582],
+[53.4584, -2.293809],
+[53.458247, -2.29409],
+[53.457998, -2.29459],
+[53.457812, -2.294965],
+[53.457587, -2.295297],
+[53.457335, -2.295602],
+[53.456821, -2.296103],
+[53.455317, -2.297602],
+[53.454382, -2.29851],
+[53.454111, -2.298796],
+[53.453395, -2.299485],
+[53.453268, -2.299598],
+[53.453169, -2.299592],
+[53.451846, -2.300751],
+[53.45068, -2.301714],
+[53.450514, -2.301878],
+[53.450256, -2.302176],
+[53.449648, -2.302824],
+[53.447086, -2.305603],
+[53.446271, -2.306577],
+[53.445999, -2.306907],
+[53.44613, -2.307499],
+[53.446228, -2.307882],
+[53.446294, -2.307983],
+[53.446325, -2.308274],
+[53.446332, -2.308334],
+[53.44636, -2.308613],
+[53.446369, -2.308787],
+[53.446378, -2.309691],
+[53.446374, -2.309844],
+[53.446348, -2.310055],
+[53.446197, -2.310695],
+[53.446055, -2.311261],
+[53.445866, -2.312031],
+[53.445833, -2.312204],
+[53.445792, -2.312624],
+[53.445771, -2.31318],
+[53.445747, -2.313599],
+[53.445711, -2.313845],
+[53.445184, -2.313729],
+[53.444892, -2.313637],
+[53.444484, -2.313453],
+[53.443742, -2.313083],
+[53.443353, -2.312949],
+[53.442907, -2.312853],
+[53.442642, -2.312796],
+[53.442195, -2.312711],
+[53.441944, -2.312664],
+[53.441497, -2.312589],
+[53.441335, -2.312562],
+[53.441015, -2.312584],
+[53.440656, -2.31266],
+[53.440215, -2.312805],
+[53.440155, -2.312824],
+[53.43973, -2.313068],
+[53.439502, -2.3132],
+[53.439106, -2.313556],
+[53.43906, -2.313598],
+[53.438671, -2.313977],
+[53.438434, -2.314207],
+[53.438047, -2.314592],
+[53.437863, -2.314775],
+[53.43747, -2.31514],
+[53.437048, -2.315402],
+[53.436818, -2.315545],
+[53.436387, -2.315763],
+[53.43615, -2.315883],
+[53.43571, -2.316041],
+[53.435594, -2.316083],
+[53.43515, -2.316204],
+[53.434999, -2.316245],
+[53.434669, -2.316299],
+[53.434419, -2.316245],
+[53.434201, -2.316322],
+[53.433935, -2.316497],
+[53.433525, -2.316808],
+[53.433409, -2.316896],
+[53.433007, -2.317235],
+[53.432867, -2.317353],
+[53.432473, -2.317715],
+[53.432161, -2.318002],
+[53.431783, -2.318411],
+[53.431405, -2.31882],
+[53.431355, -2.318874],
+[53.431085, -2.319093],
+[53.430705, -2.319495],
+[53.430384, -2.319835],
+[53.430013, -2.32026],
+[53.429641, -2.320686],
+[53.42927, -2.321112],
+[53.428928, -2.321505],
+[53.428556, -2.321929],
+[53.428184, -2.322354],
+[53.428147, -2.322396],
+[53.427788, -2.32285],
+[53.427661, -2.32301],
+[53.427294, -2.323445],
+[53.427253, -2.323494],
+[53.426873, -2.323898],
+[53.426493, -2.324302],
+[53.426412, -2.324388],
+[53.426038, -2.324809],
+[53.425665, -2.32523],
+[53.425273, -2.325656],
+[53.424896, -2.326067],
+[53.424519, -2.326477],
+[53.424425, -2.32658],
+[53.42405, -2.326996],
+[53.423675, -2.327413],
+[53.4233, -2.327829],
+[53.422925, -2.328246],
+[53.42255, -2.328662],
+[53.422175, -2.329079],
+[53.4218, -2.329495],
+[53.421425, -2.329912],
+[53.421153, -2.330214],
+[53.420778, -2.330631],
+[53.420403, -2.331047],
+[53.420028, -2.331464],
+[53.419653, -2.33188],
+[53.419261, -2.33232],
+[53.418888, -2.33274],
+[53.418514, -2.33316],
+[53.418141, -2.33358],
+[53.417767, -2.334],
+[53.417551, -2.334242],
+[53.41718, -2.334668],
+[53.416809, -2.335094],
+[53.416437, -2.33552],
+[53.416066, -2.335946],
+[53.415695, -2.336372],
+[53.415324, -2.336798],
+[53.414953, -2.337224],
+[53.414582, -2.33765],
+[53.414211, -2.338076],
+[53.41384, -2.338502],
+[53.413469, -2.338928],
+[53.413097, -2.339354],
+[53.412726, -2.33978],
+[53.412355, -2.340206],
+[53.411984, -2.340632],
+[53.411613, -2.341058],
+[53.411242, -2.341484],
+[53.410871, -2.34191],
+[53.410575, -2.34225],
+[53.410211, -2.342693],
+[53.409847, -2.343136],
+[53.409483, -2.343579],
+[53.409118, -2.344022],
+[53.408754, -2.344464],
+[53.408614, -2.344635],
+[53.408244, -2.345064],
+[53.407874, -2.345492],
+[53.407512, -2.345911],
+[53.407148, -2.346356],
+[53.406785, -2.346801],
+[53.406699, -2.346907],
+[53.406314, -2.347297],
+[53.406177, -2.347436],
+[53.40615, -2.347493],
+[53.405992, -2.34695],
+[53.405532, -2.345222],
+[53.404823, -2.342529],
+[53.404052, -2.339418],
+[53.40382, -2.338441],
+[53.403512, -2.336807],
+[53.403369, -2.336072],
+[53.403304, -2.3358],
+[53.402933, -2.334495],
+[53.402318, -2.332397],
+[53.402185, -2.331903],
+[53.401813, -2.331046],
+[53.401782, -2.330956],
+[53.401741, -2.330791],
+[53.401724, -2.33069],
+[53.40171, -2.330522],
+[53.401716, -2.329635],
+[53.401693, -2.328901],
+[53.401637, -2.328166],
+[53.4016, -2.327824],
+[53.401576, -2.327622],
+[53.401403, -2.326591],
+[53.401131, -2.325028],
+[53.401085, -2.324811],
+[53.401024, -2.324594],
+[53.400952, -2.324396],
+[53.399982, -2.322128],
+[53.399915, -2.321952],
+[53.3998, -2.321589],
+[53.399736, -2.321314],
+[53.39968, -2.321131],
+[53.399558, -2.320838],
+[53.399367, -2.320476],
+[53.399302, -2.320326],
+[53.399221, -2.320085],
+[53.399134, -2.319763],
+[53.399026, -2.319463],
+[53.398919, -2.31922],
+[53.398741, -2.318862],
+[53.39858, -2.318665],
+[53.398501, -2.318588],
+[53.398423, -2.318534],
+[53.398165, -2.31843],
+[53.397695, -2.318279],
+[53.397445, -2.318208],
+[53.397286, -2.31868],
+[53.397259, -2.318812],
+[53.397236, -2.318958],
+[53.397201, -2.319401],
+[53.397178, -2.320001],
+[53.397159, -2.320172],
+[53.397122, -2.320347],
+[53.397053, -2.320582],
+[53.396963, -2.320808],
+[53.396854, -2.321031],
+[53.396745, -2.321245],
+[53.396613, -2.321471],
+[53.39647, -2.321672],
+[53.396075, -2.322104],
+[53.395852, -2.322363],
+[53.395568, -2.322693],
+[53.395405, -2.322929],
+[53.394328, -2.324651],
+[53.394188, -2.324891],
+[53.394018, -2.325254],
+[53.393772, -2.325948],
+[53.39371, -2.326082],
+[53.393567, -2.326312],
+[53.392772, -2.327444],
+[53.392081, -2.328491],
+[53.392001, -2.328566],
+[53.391954, -2.328591],
+[53.391868, -2.328605],
+[53.391776, -2.328587],
+[53.391659, -2.328596],
+[53.391559, -2.329888],
+[53.391567, -2.330204],
+[53.391617, -2.330761],
+[53.391837, -2.332512],
+[53.391915, -2.333232],
+[53.391932, -2.333538],
+[53.391927, -2.334028],
+[53.391922, -2.334266],
+[53.391894, -2.334716],
+[53.391841, -2.335252],
+[53.391707, -2.336204],
+[53.391662, -2.3366],
+[53.391639, -2.337037],
+[53.391643, -2.337786],
+[53.391637, -2.338096],
+[53.391599, -2.338401],
+[53.391343, -2.339701],
+[53.391279, -2.34018],
+[53.391204, -2.3405],
+[53.391177, -2.3409],
+[53.391167, -2.341649],
+[53.391165, -2.342317],
+[53.391184, -2.343553],
+[53.391164, -2.34593],
+[53.391151, -2.34638],
+[53.391122, -2.34677],
+[53.391089, -2.347088],
+[53.390988, -2.347287],
+[53.390947, -2.347336],
+[53.390915, -2.347367],
+[53.390869, -2.34739],
+[53.390753, -2.347426],
+[53.390462, -2.347223],
+[53.389712, -2.346702],
+[53.389572, -2.346646],
+[53.389425, -2.347423],
+[53.389367, -2.347872],
+[53.389345, -2.347981],
+[53.389303, -2.348051],
+[53.389261, -2.348101],
+[53.389131, -2.348197],
+[53.389074, -2.348254],
+[53.38904, -2.348315],
+[53.389001, -2.348394],
+[53.388677, -2.349321],
+[53.388653, -2.349415],
+[53.388632, -2.34956],
+[53.388638, -2.3497],
+[53.388707, -2.350193],
+[53.388783, -2.350545],
+[53.388813, -2.350611],
+[53.388742, -2.350731],
+[53.388714, -2.350795],
+[53.38867, -2.350954],
+[53.388637, -2.350936],
+[53.388581, -2.350946],
+[53.388317, -2.351211],
+[53.387959, -2.351667],
+[53.387601, -2.352123],
+[53.387251, -2.352568],
+[53.386871, -2.352972],
+[53.386492, -2.353376],
+[53.386444, -2.353427],
+[53.386215, -2.35297],
+[53.385979, -2.352399],
+[53.385741, -2.351942],
+[53.385555, -2.351622],
+[53.385412, -2.351271],
+[53.385658, -2.350976],
+[53.385911, -2.350464],
+[53.386207, -2.349896],
+[53.38624, -2.349833],
+[53.386463, -2.349537],
+[53.386781, -2.349004],
+[53.386851, -2.348887],
+[53.38669, -2.348397],
+[53.386496, -2.347924],
+[53.386268, -2.347274],
+[53.386243, -2.346879],
+[53.386225, -2.346505],
+[53.386237, -2.345835],
+[53.386228, -2.345787],
+[53.387491, -2.345133],
+[53.387791, -2.345005],
+[53.388067, -2.344935],
+[53.388273, -2.34491],
+[53.388535, -2.344916],
+[53.388737, -2.344943],
+[53.38904, -2.345033],
+[53.389366, -2.345175],
+[53.389574, -2.345294],
+[53.389828, -2.345462],
+[53.389922, -2.345498],
+[53.389998, -2.345502],
+[53.390062, -2.345488],
+[53.390122, -2.34546],
+[53.390185, -2.345415],
+[53.390412, -2.345147],
+[53.390529, -2.344953],
+[53.390608, -2.344734],
+[53.390928, -2.343578],
+[53.390968, -2.343369],
+[53.390979, -2.34326],
+[53.390986, -2.343066],
+[53.390966, -2.342774],
+[53.390912, -2.342485],
+[53.390835, -2.34207],
+[53.390824, -2.341919],
+[53.390882, -2.341726],
+[53.390962, -2.341646],
+[53.391083, -2.34144],
+[53.391153, -2.341066],
+[53.391164, -2.340472],
+[53.391263, -2.340033],
+[53.391394, -2.339312],
+[53.391514, -2.338648],
+[53.391603, -2.338069],
+[53.3916, -2.337315],
+[53.391598, -2.336842],
+[53.391635, -2.336377],
+[53.391741, -2.335686],
+[53.39183, -2.334947],
+[53.391846, -2.334818],
+[53.391893, -2.334231],
+[53.391893, -2.333722],
+[53.391872, -2.333169],
+[53.391801, -2.332425],
+[53.391772, -2.332126],
+[53.391662, -2.331395],
+[53.3916, -2.330986],
+[53.391528, -2.330242],
+[53.391521, -2.330171],
+[53.391527, -2.329811],
+[53.391583, -2.329063],
+[53.391638, -2.328322],
+[53.391701, -2.327769],
+[53.391772, -2.327025],
+[53.391843, -2.32628],
+[53.391914, -2.325536],
+[53.391985, -2.324791],
+[53.392037, -2.32425],
+[53.392111, -2.323507],
+[53.392185, -2.322763],
+[53.392258, -2.322019],
+[53.392332, -2.321275],
+[53.392406, -2.320531],
+[53.39248, -2.319788],
+[53.392544, -2.319146],
+[53.392619, -2.318403],
+[53.392652, -2.318086],
+[53.392765, -2.317581],
+[53.392791, -2.317503],
+[53.392947, -2.317508],
+[53.394388, -2.317264],
+[53.394757, -2.317182],
+[53.39519, -2.317119],
+[53.395367, -2.317136],
+[53.395467, -2.317161],
+[53.395736, -2.317258],
+[53.39658, -2.317735],
+[53.396914, -2.317937],
+[53.397138, -2.318042],
+[53.397445, -2.318208],
+[53.397757, -2.317396],
+[53.398106, -2.31638],
+[53.398252, -2.316002],
+[53.398549, -2.315158],
+[53.399064, -2.313683],
+[53.399281, -2.313045],
+[53.399455, -2.312491],
+[53.399588, -2.31201],
+[53.399653, -2.311741],
+[53.399714, -2.311444],
+[53.399848, -2.310478],
+[53.399937, -2.309837],
+[53.400014, -2.309546],
+[53.400017, -2.309482],
+[53.400125, -2.309529],
+[53.400216, -2.309608],
+[53.40027, -2.309725],
+[53.400343, -2.309848],
+[53.40062, -2.310109],
+[53.401615, -2.310944],
+[53.40256, -2.311792],
+[53.404126, -2.313254],
+[53.404504, -2.313607],
+[53.405815, -2.314725],
+[53.407146, -2.315897],
+[53.407866, -2.316516],
+[53.408937, -2.317531],
+[53.409193, -2.317742],
+[53.409562, -2.318109],
+[53.411555, -2.319884],
+[53.411754, -2.320065],
+[53.413003, -2.32116],
+[53.416264, -2.324096],
+[53.41667, -2.324469],
+[53.416822, -2.324628],
+[53.41688, -2.32467],
+[53.417114, -2.3249],
+[53.417368, -2.325088],
+[53.417379, -2.324888],
+[53.417397, -2.324734],
+[53.417581, -2.32343],
+[53.41761, -2.323094],
+[53.417627, -2.322507],
+[53.41763, -2.321578],
+[53.41761, -2.319732],
+[53.417611, -2.317742],
+[53.417596, -2.314974],
+[53.417568, -2.312126],
+[53.417604, -2.311296],
+[53.417617, -2.310928],
+[53.417645, -2.310467],
+[53.417685, -2.309899],
+[53.417719, -2.309607],
+[53.417775, -2.309321],
+[53.417903, -2.308934],
+[53.418007, -2.30872],
+[53.418567, -2.307563],
+[53.418858, -2.306917],
+[53.419339, -2.307552],
+[53.419487, -2.30786],
+[53.419524, -2.307938],
+[53.419615, -2.308305],
+[53.419872, -2.310004],
+[53.420051, -2.311621],
+[53.420378, -2.311695],
+[53.420525, -2.311749],
+[53.420965, -2.311876],
+[53.42186, -2.312094],
+[53.422204, -2.312199],
+[53.422502, -2.312262],
+[53.422548, -2.312227],
+[53.424016, -2.316912],
+[53.424457, -2.318285],
+[53.424537, -2.318239],
+[53.424585, -2.318194],
+[53.424632, -2.318002],
+[53.424891, -2.316409],
+[53.425246, -2.314186],
+[53.425508, -2.312594],
+[53.425893, -2.310669],
+[53.425975, -2.31024],
+[53.425984, -2.310125],
+[53.425946, -2.309864],
+[53.425869, -2.309562],
+[53.425656, -2.308642],
+[53.425416, -2.307446],
+[53.425252, -2.306688],
+[53.425143, -2.306166],
+[53.424835, -2.304547],
+[53.424479, -2.302886],
+[53.424391, -2.302535],
+[53.424628, -2.302352],
+[53.425241, -2.301791],
+[53.425633, -2.301432],
+[53.425774, -2.301227],
+[53.426189, -2.300978],
+[53.42696, -2.301097],
+[53.427203, -2.301119],
+[53.427423, -2.301205],
+[53.42753, -2.3013],
+[53.427625, -2.301419],
+[53.427702, -2.301547],
+[53.427771, -2.3017],
+[53.427838, -2.301902],
+[53.427902, -2.302122],
+[53.427928, -2.302268],
+[53.427942, -2.302377],
+[53.427956, -2.302604],
+[53.427973, -2.303381],
+[53.427991, -2.303561],
+[53.428143, -2.30422],
+[53.428207, -2.304482],
+[53.428532, -2.305697],
+[53.428621, -2.305956],
+[53.429043, -2.306923],
+[53.42909, -2.307082],
+[53.429151, -2.307342],
+[53.429243, -2.307862],
+[53.429283, -2.308036],
+[53.429332, -2.308184],
+[53.429378, -2.308279],
+[53.429855, -2.309181],
+[53.429939, -2.309425],
+[53.430023, -2.309703],
+[53.43023, -2.310492],
+[53.430471, -2.311487],
+[53.430616, -2.312165],
+[53.430712, -2.312545],
+[53.430812, -2.31319],
+[53.43088, -2.313753],
+[53.430934, -2.314081],
+[53.430997, -2.314574],
+[53.431052, -2.315131],
+[53.431074, -2.315524],
+[53.431114, -2.316707],
+[53.431109, -2.316922],
+[53.431086, -2.317191],
+[53.430972, -2.318351],
+[53.430982, -2.318522],
+[53.431119, -2.318892],
+[53.431209, -2.318852],
+[53.431285, -2.318733],
+[53.431665, -2.31833],
+[53.432045, -2.317927],
+[53.432446, -2.317511],
+[53.432828, -2.317115],
+[53.432928, -2.317012],
+[53.433275, -2.316672],
+[53.433528, -2.31642],
+[53.433756, -2.316231],
+[53.434056, -2.316058],
+[53.434298, -2.315922],
+[53.434573, -2.315811],
+[53.435017, -2.315695],
+[53.435485, -2.315588],
+[53.435621, -2.315557],
+[53.435985, -2.315468],
+[53.436249, -2.315379],
+[53.436488, -2.315284],
+[53.436758, -2.315156],
+[53.437019, -2.315038],
+[53.437184, -2.314923],
+[53.437389, -2.314777],
+[53.437796, -2.314458],
+[53.438196, -2.314099],
+[53.438387, -2.313928],
+[53.43878, -2.313564],
+[53.438868, -2.313484],
+[53.439273, -2.313157],
+[53.439311, -2.313126],
+[53.43946, -2.313018],
+[53.43982, -2.312783],
+[53.440098, -2.312634],
+[53.4405, -2.312475],
+[53.440816, -2.312381],
+[53.441103, -2.312269],
+[53.441271, -2.312168],
+[53.441484, -2.31201],
+[53.441719, -2.311791],
+[53.441979, -2.311526],
+[53.442288, -2.311132],
+[53.442669, -2.310732],
+[53.442718, -2.310681],
+[53.44309, -2.310258],
+[53.443278, -2.310046],
+[53.44365, -2.309621],
+[53.443988, -2.309236],
+[53.444357, -2.308806],
+[53.444638, -2.30848],
+[53.445006, -2.308045],
+[53.445254, -2.307753],
+[53.445604, -2.307278],
+[53.445783, -2.307035],
+[53.445853, -2.306822],
+[53.445833, -2.306416],
+[53.445742, -2.305677],
+[53.445732, -2.305595],
+[53.445629, -2.30486],
+[53.445527, -2.304125],
+[53.445426, -2.303405],
+[53.44537, -2.302656],
+[53.445344, -2.302302],
+[53.445229, -2.301571],
+[53.445115, -2.300841],
+[53.445001, -2.300111],
+[53.444967, -2.299894],
+[53.444869, -2.299381],
+[53.444867, -2.298807],
+[53.44485, -2.298052],
+[53.444834, -2.297298],
+[53.444818, -2.296543],
+[53.444787, -2.295778],
+[53.444735, -2.294987],
+[53.44471, -2.294618],
+[53.444594, -2.293889],
+[53.444549, -2.293607],
+[53.444291, -2.292994],
+[53.444021, -2.29239],
+[53.443809, -2.291917],
+[53.443524, -2.291333],
+[53.443286, -2.290847],
+[53.443031, -2.290224],
+[53.443011, -2.290175],
+[53.442791, -2.289516],
+[53.442587, -2.28887],
+[53.44243, -2.288172],
+[53.442431, -2.287561],
+[53.442521, -2.286821],
+[53.442556, -2.286031],
+[53.442565, -2.285809],
+[53.442567, -2.285054],
+[53.442569, -2.284299],
+[53.442571, -2.283544],
+[53.442589, -2.282762],
+[53.442607, -2.282008],
+[53.44262, -2.281429],
+[53.44261, -2.280674],
+[53.442599, -2.279922],
+[53.442576, -2.279168],
+[53.442557, -2.278558],
+[53.442548, -2.277803],
+[53.442543, -2.277312],
+[53.442705, -2.277407],
+[53.443114, -2.27772],
+[53.443523, -2.278034],
+[53.443588, -2.278083],
+[53.444015, -2.27832],
+[53.444274, -2.278463],
+[53.44473, -2.278651],
+[53.444992, -2.278631],
+[53.445141, -2.278499],
+[53.445409, -2.278183],
+[53.445835, -2.277827],
+[53.446448, -2.277578],
+[53.447069, -2.277301],
+[53.447255, -2.277205],
+[53.447661, -2.276995],
+[53.447808, -2.276848],
+[53.448367, -2.276336],
+[53.448481, -2.276216],
+[53.448672, -2.275962],
+[53.449308, -2.274875],
+[53.449512, -2.274512],
+[53.449993, -2.27392],
+[53.450291, -2.273549],
+[53.450394, -2.27344],
+[53.450667, -2.273116],
+[53.450622, -2.272993],
+[53.450587, -2.272798],
+[53.450602, -2.272511],
+[53.450657, -2.271807],
+[53.450699, -2.27154],
+[53.45071, -2.271485],
+[53.451044, -2.270945],
+[53.455909, -2.263071],
+[53.456982, -2.261286],
+[53.45863, -2.258609],
+[53.458747, -2.258392],
+[53.458813, -2.258197],
+[53.459001, -2.258207],
+[53.461033, -2.258107],
+[53.462657, -2.258023],
+[53.462843, -2.258016],
+[53.4631, -2.258025],
+[53.463584, -2.258006],
+[53.465707, -2.257872],
+[53.465796, -2.257412],
+[53.465897, -2.256894],
+[53.466919, -2.251489],
+[53.46785, -2.246684],
+[53.468425, -2.243691],
+[53.468743, -2.242042],
+[53.468691, -2.241985],
+[53.468386, -2.24171],
+[53.468304, -2.24165],
+[53.468248, -2.241629],
+[53.468147, -2.241614],
+[53.46803, -2.241603],
+[53.467969, -2.241584],
+[53.467439, -2.241124],
+[53.467283, -2.241006],
+[53.467103, -2.240889],
+[53.467003, -2.240836],
+[53.466888, -2.240775],
+[53.466559, -2.240649],
+[53.466257, -2.240563],
+[53.464877, -2.240433],
+[53.464692, -2.2404],
+[53.464597, -2.240366],
+[53.464444, -2.240258],
+[53.464323, -2.240138],
+[53.464206, -2.23997],
+[53.464073, -2.23975],
+[53.463916, -2.239533],
+[53.463687, -2.239332],
+[53.463658, -2.239235],
+[53.463702, -2.239195],
+[53.463744, -2.239135],
+[53.463882, -2.23856],
+[53.464396, -2.236325],
+[53.464457, -2.236185],
+[53.464384, -2.236107],
+[53.463774, -2.235736],
+[53.463642, -2.235652],
+[53.463448, -2.235507],
+[53.463275, -2.23542],
+[53.461882, -2.235523],
+[53.460615, -2.235598],
+[53.460412, -2.235612],
+[53.46044, -2.234959],
+[53.460439, -2.234287],
+[53.460391, -2.232396],
+[53.460407, -2.230923],
+[53.46042, -2.230804],
+[53.46058, -2.230109],
+[53.46077, -2.229223],
+[53.460951, -2.228423],
+[53.461177, -2.228597],
+[53.461376, -2.228792],
+[53.462076, -2.229368],
+[53.462515, -2.229672],
+[53.462966, -2.230108],
+[53.463049, -2.230204],
+[53.463208, -2.230442],
+[53.463379, -2.230657],
+[53.463716, -2.231052],
+[53.464101, -2.231462],
+[53.464849, -2.232336],
+[53.465191, -2.232697],
+[53.465718, -2.233253],
+[53.466102, -2.233631],
+[53.466217, -2.233739],
+[53.466527, -2.233994]
+        ];
+
+        // Draw MARATHON route - THICK, solid, BRIGHT RED
+        L.polyline(marathonRoute, {
+            color: '#cc0000',
+            weight: 5,
+            opacity: 0.85,
+            lineCap: 'round',
+            lineJoin: 'round',
+            className: 'marathon-route'
+        }).addTo(map).bindPopup('<strong>Marathon Route</strong><br>Her full 42.2km path');
+
+        // km markers removed - focus on pubs instead
+
+        // Old timing points removed
+
+        // Add start marker
+        L.circleMarker([53.4630, -2.2850], {
+            radius: 8,
+            fillColor: '#27ae60',
+            color: '#229954',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        })
+        .bindPopup('<strong>🏁 Start</strong><br>Old Trafford<br>11:10 AM')
+        .addTo(map)
+        .bindTooltip('Start', { permanent: false });
+
+        // Add finish marker
+        L.circleMarker([53.4680, -2.2350], {
+            radius: 8,
+            fillColor: '#9b59b6',
+            color: '#7d3c98',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        })
+        .bindPopup('<strong>🏁 Finish</strong><br>Oxford Road<br>3:10 PM')
+        .addTo(map)
+        .bindTooltip('Finish', { permanent: false });
+
+            // Fit map to show entire route
+            const bounds = L.latLngBounds([
+                [53.4630, -2.2850],  // Old Trafford start
+                [53.3865, -2.3456]   // Altrincham (furthest south)
+            ]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+            map.invalidateSize();
+        }
+
+        function checkPassword() {
+            const input = document.getElementById('passwordInput');
+            const errorMsg = document.getElementById('passwordError');
+
+            if (input.value === CORRECT_PASSWORD) {
+                document.getElementById('passwordOverlay').style.display = 'none';
+                document.getElementById('mainContainer').classList.remove('hidden');
+                setTimeout(initializeMap, 100);
+            } else {
+                errorMsg.style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
+            document.getElementById('passwordInput').focus();
+        });
+    </script>
+    </div>
+</body>
+</html>
