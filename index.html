@@ -32,9 +32,42 @@
         .sidebar {
             width: 320px;
             background: white;
-            padding: 20px;
+            padding: 0;
             overflow-y: auto;
             box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-handle {
+            display: none;
+        }
+        .sidebar-handle-bar {
+            width: 36px;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            margin-bottom: 6px;
+        }
+        .sidebar-handle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+        }
+        .sidebar-handle-arrow {
+            font-size: 10px;
+            display: inline-block;
+            transition: transform 0.35s;
+        }
+        .sidebar.expanded .sidebar-handle-arrow {
+            transform: rotate(180deg);
+        }
+        .sidebar-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
         }
         .sidebar h1 {
             font-size: 18px;
@@ -160,22 +193,53 @@
 
         @media (max-width: 900px) {
             .sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
                 width: 100%;
-                height: auto;
-                max-height: 40vh;
-                border-top: 1px solid #ddd;
+                max-height: 72vh;
+                overflow: hidden;
+                border-radius: 16px 16px 0 0;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.18);
+                border-top: none;
                 border-left: none;
-                padding: 15px;
+                padding: 0;
+                transform: translateY(calc(100% - 52px));
+                transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+                z-index: 1000;
             }
-            .container {
+            .sidebar.expanded {
+                transform: translateY(0);
+            }
+            .sidebar-handle {
+                display: flex;
                 flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 20px 10px;
+                cursor: pointer;
+                flex-shrink: 0;
+                height: 52px;
+                background: white;
+                border-radius: 16px 16px 0 0;
+                touch-action: manipulation;
+            }
+            .sidebar-content {
+                padding: 0 15px 20px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
             }
         }
 
         @media (max-width: 768px) {
             .sidebar {
-                max-height: 45vh;
-                padding: 12px;
+                max-height: 55vh;
+                padding: 0;
+            }
+            .sidebar-content {
+                padding: 0 12px 15px;
             }
             .sidebar h1 {
                 font-size: 16px;
@@ -219,8 +283,11 @@
                 font-size: 14px;
             }
             .sidebar {
-                max-height: 50vh;
-                padding: 10px;
+                max-height: 60vh;
+                padding: 0;
+            }
+            .sidebar-content {
+                padding: 0 10px 15px;
             }
             .sidebar h1 {
                 font-size: 15px;
@@ -346,7 +413,15 @@
 
     <div class="container hidden" id="mainContainer">
         <div id="map"></div>
-        <div class="sidebar">
+        <div class="sidebar" id="mobileSidebar">
+            <div class="sidebar-handle" id="sidebarHandle" onclick="toggleSidebar()">
+                <div class="sidebar-handle-bar"></div>
+                <div class="sidebar-handle-label">
+                    <span>🍺 Route Info</span>
+                    <span class="sidebar-handle-arrow">▲</span>
+                </div>
+            </div>
+            <div class="sidebar-content">
             <h1>🍺 Manchester Marathon 2026</h1>
             <div style="font-size: 11px; color: #666; margin-bottom: 15px;">Sunday 19 April | Spectator Pub Crawl</div>
 
@@ -468,6 +543,7 @@
                     <span><strong>4 + 6 optional</strong></span>
                 </div>
             </div>
+            </div><!-- end sidebar-content -->
         </div>
     </div>
 
@@ -1697,6 +1773,10 @@
                 input.value = '';
                 input.focus();
             }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('mobileSidebar').classList.toggle('expanded');
         }
 
         // Allow Enter key to submit
